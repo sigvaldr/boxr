@@ -1,6 +1,14 @@
 [package]
 name = "boxr"
 version = "1.0.0"
+authors = ["Sigvaldr Nóttrafn <me@sigvaldr.lol>"]
+description = "An archival utility written in Rust with maximum compression being the aim of the game"
+documentation = "https://github.com/sigvaldr/boxr"
+homepage = "https://github.com/sigvaldr/boxr"
+repository = "https://github.com/sigvaldr/boxr"
+keywords = ["boxr", "unboxr", "compression", "zip"]
+categories = ["command-line-utilities", "compression", "uncompression", "compression-utilities", "uncompression-utilities"]
+license = "GNU GPL3"
 edition = "2024"
 
 [dependencies]
