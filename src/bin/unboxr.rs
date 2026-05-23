@@ -15,7 +15,7 @@ use liblzma::read::XzDecoder;
 use tar::Archive;
 use zstd::stream::read::Decoder;
 
-const VERSION: &str = "2.3.0";
+const VERSION: &str = "2.4.0";
 
 // XZ magic number (little-endian) - first 4 bytes of XZ frame
 const XZ_MAGIC: u32 = 0xFD7A77BF;

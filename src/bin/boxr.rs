@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 use tar::Builder;
 
-const VERSION: &str = "2.3.0";
+const VERSION: &str = "2.4.0";
 
 fn main() {
     println!("boxr v{} by Sigvaldr", VERSION);
