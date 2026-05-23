@@ -11,3 +11,6 @@ walkdir = "2.5.0"
 
 # Use liblzma (fork of xz2) for multi-threaded XZ compression support
 liblzma = "0.1"
+
+# ZSTD decompression support
+zstd = "0.13"
