@@ -6,18 +6,18 @@
 // ------------------------------------------------------------------------------
 
 use chrono::Local;
-use std::fs::File;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
-use std::{env, fs};
 use tar::Builder;
-use zstd::stream::Encoder;
+use xz2::write::XzEncoder;
 
-const VERSION: &str = "1.0.0";
+const VERSION: &str = "2.0.0";
 
 fn main() {
     println!("Boxr v{} by Sigvaldr", VERSION);
-    let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
         eprintln!(
@@ -94,17 +94,23 @@ fn compress_folder(
         output_file.display()
     );
 
-    // Create a temp .tar.zst file to store actual archive
-    let temp_path = output_file.with_extension("tar.zst");
-    let tar_zst = File::create(&temp_path)?;
-    let encoder = Encoder::new(tar_zst, 22)?;
-    let mut tar_builder = Builder::new(encoder);
+    // Create a temporary file for the tar.xz archive
+    let temp_path = output_file.with_extension("tar.xz");
 
-    tar_builder.append_dir_all(".", input_folder)?;
-    let encoder = tar_builder.into_inner()?;
+    // Build the tar archive in memory first
+    let mut tar_data: Vec<u8> = Vec::with_capacity(4 * 1024 * 1024);
+    {
+        let mut builder = Builder::new(std::io::Cursor::new(&mut tar_data));
+        builder.append_dir_all(".", input_folder)?;
+    }
+
+    // Write the tar data through xz encoder directly to file
+    let tar_file = File::create(&temp_path)?;
+    let mut encoder = XzEncoder::new(tar_file, 9);
+    encoder.write_all(&tar_data)?;
     encoder.finish()?;
 
-    // Rename to .box
+    // Rename to .box extension
     fs::rename(temp_path, output_file)?;
 
     println!("Done.");

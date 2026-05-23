@@ -7,11 +7,12 @@
 
 use std::env;
 use std::fs::File;
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::process;
 
 use tar::Archive;
-use zstd::stream::read::Decoder;
+use xz2::read::XzDecoder;
 
 const VERSION: &str = "1.0.0";
 fn main() {
@@ -19,7 +20,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: {} <archive.tar.zst> [-to <output_folder>]", args[0]);
+        eprintln!("Usage: {} <archive.tar.xz> [-to <output_folder>]", args[0]);
         process::exit(1);
     }
 
@@ -44,14 +45,14 @@ fn parse_output_folder(args: &[String]) -> PathBuf {
         }
     }
 
-    // Default: use archive name without `.tar.zst`
+    // Default: use archive name without `.tar.xz`
     let archive_name = Path::new(&args[1]);
     let stem = archive_name
         .file_stem()
         .unwrap_or_default()
         .to_string_lossy();
 
-    // Handle double extensions like `.tar.zst`
+    // Handle double extensions like `.tar.xz`
     let folder_name = if stem.ends_with(".tar") {
         stem.strip_suffix(".tar").unwrap_or(&stem)
     } else {
@@ -67,8 +68,8 @@ fn extract_archive(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let oname = output_folder.to_string_lossy().to_string();
     println!("Extracting {} into {}", archive_path, oname);
-    let archive_file = File::open(archive_path)?;
-    let decoder = Decoder::new(archive_file)?;
+    let archive_file = BufReader::new(File::open(archive_path)?);
+    let decoder = XzDecoder::new(archive_file);
     let mut archive = Archive::new(decoder);
 
     std::fs::create_dir_all(output_folder)?;
