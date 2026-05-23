@@ -1,6 +1,6 @@
 # 📦 Boxr - Cross-compatible archive utility
 
-A high-performance archival utility written in **Rust** for maximum compression and multi-threaded parallel speed. Supports both XZ and ZSTD compression formats with automatic format detection.
+A high-performance archival utility written in **Rust** for maximum compression and multi-threaded parallel speed.
 
 ---
 
