@@ -1,83 +1,98 @@
-# boxr v2.3 - XZ Compression Edition (Parallel Multi-Threaded)
+# 📦 Boxr v2.4 - XZ & ZSTD Dual-Format Edition
 
-An archival utility written in Rust with maximum compression and multi-threaded parallel speed being the aim of the game.
-
----
-
-## ⚠️ Compatibility Warning: Version Incompatibility
-
-**boxr v2.x uses XZ compression, making it incompatible with boxr v1.x (which used Zstandard/zstd)!**
-
-| Version | Compression Format | Archive Extension |
-| ------- | ------------------ | ----------------- |
-| v1.x    | Zstandard (zstd)   | `.tar.zst`        |
-| v2.x    | XZ                 | `.tar.xz`         |
-
-- **v1 archives (.box with .tar.zst inside) CANNOT be extracted by v2**
-- **v2 archives (.box with .tar.xz inside) CANNOT be extracted by v1**
-
-Migration path: To switch from v1 to v2, you must re-compress your folders using the new v2 tools. Old `.box` archives from v1 will not work with v2.
+A high-performance archival utility written in **Rust** for maximum compression and multi-threaded parallel speed. Supports both XZ and ZSTD compression formats with automatic format detection.
 
 ---
 
-## Compression Format
+## ✨ Features
 
-This project uses **XZ compression** (.tar.xz inside .box).
-
-XZ provides excellent compression ratios but is CPU-intensive. We've implemented:
-
-### Streaming Compression (Memory Efficient)
-
-- Uses streaming tar → XZ pipeline with ~4MB I/O buffer
-- RAM usage reduced from O(directory_size) to ~5MB fixed buffer
-- **~95% RAM reduction** during compression operations
-
-### Multi-Threading (Parallel Speed)
-
-- Up to **~5x speedup** on multi-core systems using all CPU cores
-- liblzma automatically enables parallel compression with the appropriate library build
-- Decompression also benefits from parallel processing
-
-The underlying XZ algorithm is still CPU-bound and trades maximum speed for excellent compression ratios. See [XZ Compression](<https://en.wikipedia.org/wiki/XZ_(compression)>) for technical details.
+- **Dual Format Support**: Automatically handles both `.tar.xz` (XZ) and `.tar.zst` (ZSTD) archives
+- **Maximum Compression**: XZ compression with liblzma for excellent compression ratios
+- **Multi-Threading**: Parallel compression/decompression using all available CPU cores (~5x speedup on multi-core systems)
+- **Memory Efficient**: Streaming pipeline uses only ~4MB I/O buffer (~95% RAM reduction vs full materialization)
 
 ---
 
-## Usage
+## 📦 Archive Format Support
 
-### Compressing a folder (boxr)
+| Version | Compression Format | Extension (XZ) | Extension (ZSTD) |
+| ------- | ------------------ | -------------- | ---------------- |
+| v1.x    | Zstandard (zstd)   | —              | `.tar.zst`       |
+| v2.4+   | **XZ + ZSTD**      | `.tar.xz`      | `.tar.zst`       |
+
+> ℹ️ **Auto-Detection**: The `unboxr` tool automatically detects the compression format by reading magic bytes. It prefers ZSTD if detected, otherwise assumes XZ.
+
+---
+
+## 🛠️ Usage
+
+### Compressing a folder (`boxr`)
 
 ```bash
-boxr <input_folder> [output_archive.box]
-# Or with timestamp: boxr -stamp <input_folder> [output_archive.box]
+# Basic compression (auto output as .box)
+boxr <input_folder>
+
+# With custom output filename
+boxr <input_folder> output.box
+
+# Add timestamp to filename (format: DDMMMYY-HHMMSS-STEM.box)
+boxr -stamp <input_folder>
+
+# Explicit output path
+boxr <input_folder> /path/to/archive.box
 ```
 
-### Extracting an archive (unboxr)
+### Extracting an archive (`unboxr`)
 
 ```bash
-unboxr <archive.tar.xz> [-to <output_folder>]
+unboxr <archive.box> [-to <output_folder>]
+
+unboxr /path/to/archive.box
+unboxr archive.box -to /path/to/output
 ```
 
 ---
 
-## Building
+## 📋 Quick Reference
 
-```bash
-cargo build --release
-```
-
-The resulting binaries work natively on each platform.
+| Command                         | Description                          |
+| ------------------------------- | ------------------------------------ |
+| `boxr <folder>`                 | Compress folder to auto `.box`       |
+| `boxr -stamp <folder>`          | Compress with date stamp in filename |
+| `boxr <folder> output.box`      | Compress with custom filename        |
+| `unboxr archive.box [-to dest]` | Extract archive                      |
 
 ---
 
-## Build Dependencies
+## 🦀 Building
+
+```bash
+# Debug build (includes compression detection messages in output)
+cargo build --bin boxr           # Development with debug assertions
+cargo build --bin unboxr         # Development with debug assertions
+
+# Release build (optimized, faster, no debug messages)
+cargo build --release --bin boxr
+cargo build --release --bin unboxr
+
+# Install to system path
+cargo install --path . --bin boxr --bin unboxr
+```
+
+**To see compression format detection output**, run with the debug build. Release builds operate silently for optimal performance.
+
+---
+
+## 🔧 Build Dependencies
 
 ### Prerequisites
 
-- **Rust** 1.70+ and Cargo installed ([Install Rust](https://www.rust-lang.org/tools/install))
+- **Rust** 1.70+ and Cargo installed
+- [Install Rust](https://www.rust-lang.org/tools/install)
 
 ### System Dependencies for liblzma (XZ Compression)
 
-The project uses `liblzma`, which requires the system's liblzma development libraries during build. At **runtime**, Windows systems need `liblzma.dll` available (same directory as `.exe` or in system PATH).
+The project uses `liblzma` which requires system development libraries during build. At runtime, Windows systems need `liblzma.dll` available (same directory as `.exe` or in system PATH).
 
 #### Linux (Debian/Ubuntu)
 
@@ -101,19 +116,20 @@ brew install xz
 
 #### Windows (MSVC/MinGW)
 
-On Windows, use Rust's standard build tooling with MSVC toolchain. Install Visual Studio Build Tools with C++ Desktop Development workload, or use MinGW-w64 toolchain for GCC-based builds. The `liblzma` crate supports dynamic linking to system liblzma.
+- Use Rust's standard build tooling with **MSVC** toolchain (Visual Studio Build Tools + C++ Desktop Development workload) or **MinGW-w64** for GCC-based builds.
 
-**Runtime Requirement:** Your compiled `.exe` will need `liblzma.dll` available at runtime. To get it:
-
-- Download from [Tukaani XZ](https://tukaani.org/xz/) and place alongside your EXE
-- Use Chocolatey (`choco install xz`) or Winget to install
-
-#### Android (NDK)
-
-Android requires NDK cross-compilation setup with appropriate target features enabled.
+> ⚠️ **Runtime Requirement**: On Windows, `liblzma.dll` must be available at runtime. Download from [Tukaani XZ](https://tukaani.org/xz/) and place alongside your EXE, or use Chocolatey (`choco install xz`) / Winget to install.
 
 ---
 
-## License
+## 📊 Performance Notes
+
+- **Compression**: Uses streaming tar → XZ pipeline with multi-threading enabled via liblzma
+- **Decompression**: Supports both XZ (liblzma) and ZSTD (libzstd) decoders automatically
+- **Memory Usage**: Fixed ~4MB I/O buffer regardless of archive size
+
+---
+
+## 🔒 License
 
 MIT License
