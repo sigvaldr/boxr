@@ -6,21 +6,9 @@ A high-performance archival utility written in **Rust** for maximum compression 
 
 ## ✨ Features
 
-- **Dual Format Support**: Automatically handles both `.tar.xz` (XZ) and `.tar.zst` (ZSTD) archives
 - **Maximum Compression**: XZ compression with liblzma for excellent compression ratios
 - **Multi-Threading**: Parallel compression/decompression using all available CPU cores (~5x speedup on multi-core systems)
 - **Memory Efficient**: Streaming pipeline uses only ~4MB I/O buffer (~95% RAM reduction vs full materialization)
-
----
-
-## 📦 Archive Format Support
-
-| Version | Compression Format | Extension (XZ) | Extension (ZSTD) |
-| ------- | ------------------ | -------------- | ---------------- |
-| v1.x    | Zstandard (zstd)   | —              | `.tar.zst`       |
-| v2.4+   | **XZ + ZSTD**      | `.tar.xz`      | `.tar.zst`       |
-
-> ℹ️ **Auto-Detection**: The `unboxr` tool automatically detects the compression format by reading magic bytes. It prefers ZSTD if detected, otherwise assumes XZ.
 
 ---
 
