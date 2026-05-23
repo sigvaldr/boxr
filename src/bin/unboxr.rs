@@ -11,10 +11,11 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::process;
 
+use liblzma::read::XzDecoder;
 use tar::Archive;
-use xz2::read::XzDecoder;
 
-const VERSION: &str = "1.0.0";
+const VERSION: &str = "2.3.0";
+
 fn main() {
     println!("unBoxr v{} by Sigvaldr", VERSION);
     let args: Vec<String> = env::args().collect();
@@ -68,11 +69,14 @@ fn extract_archive(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let oname = output_folder.to_string_lossy().to_string();
     println!("Extracting {} into {}", archive_path, oname);
-    let archive_file = BufReader::new(File::open(archive_path)?);
-    let decoder = XzDecoder::new(archive_file);
+
+    // Open and decompress XZ archive with multi-threaded support (automatic via liblzma)
+    let file = BufReader::new(File::open(archive_path)?);
+    let decoder = XzDecoder::new(file);
     let mut archive = Archive::new(decoder);
 
     std::fs::create_dir_all(output_folder)?;
     archive.unpack(output_folder)?;
+
     Ok(())
 }
