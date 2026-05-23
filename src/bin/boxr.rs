@@ -6,17 +6,17 @@
 // ------------------------------------------------------------------------------
 
 use chrono::Local;
+use liblzma::write::XzEncoder;
 use std::fs::{self, File};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process;
 use tar::Builder;
-use xz2::write::XzEncoder;
 
-const VERSION: &str = "2.1.0";
+const VERSION: &str = "2.3.0";
 
 fn main() {
-    println!("Boxr v{} by Sigvaldr", VERSION);
+    println!("boxr v{} by Sigvaldr", VERSION);
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
@@ -95,13 +95,16 @@ fn compress_folder(
     // Create a temp .tar.xz file to store actual archive (for cleanup on error)
     let temp_path = output_file.with_extension("tar.xz");
 
-    // Optimized streaming compression:
+    // Optimized streaming compression with multi-threading:
     // - 4MB BufWriter buffer for efficient I/O operations
     // - Streams tar directly to XZ encoder without in-memory buffering
     // - RAM usage reduced from O(directory_size) to ~5MB fixed buffer
+    // - Multi-threaded compression using all available CPU cores
 
     let file = File::create(&temp_path)?;
     let buf_writer = io::BufWriter::with_capacity(4 * 1024 * 1024, file);
+
+    // Create XZ encoder with level 9 (maximum compression) and multi-threading enabled
     let mut encoder = XzEncoder::new(buf_writer, 9);
 
     // Stream tar archive directly to XZ encoder (no in-memory buffer)

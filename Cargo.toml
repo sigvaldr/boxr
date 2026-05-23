@@ -8,4 +8,6 @@ chrono = "0.4.41"
 indicatif = "0.17.11"
 tar = "0.4.44"
 walkdir = "2.5.0"
-xz2 = "0.1.1"
+
+# Use liblzma (fork of xz2) for multi-threaded XZ compression support
+liblzma = "0.1"
