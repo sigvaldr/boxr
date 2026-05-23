@@ -17,9 +17,6 @@ use zstd::stream::read::Decoder;
 
 const VERSION: &str = "2.4.0";
 
-// XZ magic number (little-endian) - first 4 bytes of XZ frame
-const XZ_MAGIC: u32 = 0xFD7A77BF;
-
 // ZSTD magic number (little-endian) - first 4 bytes of ZSTD frame header
 const ZSTD_MAGIC: u32 = 0xFD2FB528;
 
@@ -28,13 +25,8 @@ fn read_magic(bytes: &[u8]) -> Result<u32, Box<dyn std::error::Error>> {
     Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
 }
 
-/// Check if a magic number indicates XZ format
-fn is_xz_magic(magic: u32) -> bool {
-    // XZ magic numbers range from 0xFD7A77BF to 0xFD7A77FF (first byte must be 0xFD)
-    magic >= 0xFD7A77BF && magic <= 0xFD7A77FF
-}
-
-/// Extract archive - auto-detects XZ or ZSTD compression format
+/// Extract archive - auto-detects compression format
+// Only checks for ZSTD; if not ZSTD, assumes XZ format
 fn extract_archive(
     archive_path: &str,
     output_folder: &Path,
@@ -51,27 +43,18 @@ fn extract_archive(
     let magic = read_magic(&magic_buffer)?;
     file_handle.seek(std::io::SeekFrom::Start(0))?;
 
-    match magic {
-        m if is_xz_magic(m) => {
-            println!("Detected XZ compression");
-            std::fs::create_dir_all(output_folder)?;
-            let file = BufReader::new(file_handle);
-            Archive::new(XzDecoder::new(file)).unpack(output_folder)?;
-        }
-        m if m == ZSTD_MAGIC => {
-            println!("Detected ZSTD compression");
-            std::fs::create_dir_all(output_folder)?;
-            let file = BufReader::new(file_handle);
-            let decoder =
-                Decoder::new(file).map_err(|e| format!("ZSTD decompression error: {}", e))?;
-            Archive::new(decoder).unpack(output_folder)?;
-        }
-        magic => {
-            return Err(format!(
-                "Unsupported compression format. Expected XZ (0x{:08X}) or ZSTD (0x{:08X}), got 0x{:08X}",
-                XZ_MAGIC, ZSTD_MAGIC, magic
-            ).into());
-        }
+    if magic == ZSTD_MAGIC {
+        println!("Detected ZSTD compression");
+        std::fs::create_dir_all(output_folder)?;
+        let file = BufReader::new(file_handle);
+        let decoder = Decoder::new(file).map_err(|e| format!("ZSTD decompression error: {}", e))?;
+        Archive::new(decoder).unpack(output_folder)?;
+    } else {
+        // Assume XZ format if not ZSTD
+        println!("Using XZ compression (default)");
+        std::fs::create_dir_all(output_folder)?;
+        let file = BufReader::new(file_handle);
+        Archive::new(XzDecoder::new(file)).unpack(output_folder)?;
     };
 
     Ok(())
