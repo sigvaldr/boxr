@@ -44,14 +44,18 @@ fn extract_archive(
     file_handle.seek(std::io::SeekFrom::Start(0))?;
 
     if magic == ZSTD_MAGIC {
-        println!("Detected ZSTD compression");
+        if cfg!(debug_assertions) {
+            println!("Detected ZSTD compression");
+        }
         std::fs::create_dir_all(output_folder)?;
         let file = BufReader::new(file_handle);
         let decoder = Decoder::new(file).map_err(|e| format!("ZSTD decompression error: {}", e))?;
         Archive::new(decoder).unpack(output_folder)?;
     } else {
         // Assume XZ format if not ZSTD
-        println!("Using XZ compression (default)");
+        if cfg!(debug_assertions) {
+            println!("Using XZ compression (default)");
+        }
         std::fs::create_dir_all(output_folder)?;
         let file = BufReader::new(file_handle);
         Archive::new(XzDecoder::new(file)).unpack(output_folder)?;
